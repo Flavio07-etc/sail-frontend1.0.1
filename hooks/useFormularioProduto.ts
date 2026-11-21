@@ -66,9 +66,10 @@ export function useFormularioProduto(servico: ServicoProdutos, id: string | stri
       return;
     }
     try {
+      const dados = imagem ? { ...validacao.dados, imagem } : validacao.dados;
       const resposta = await executar(signal => isEditing
-        ? servico.atualizar(produtoId!, validacao.dados, versao!, signal)
-        : servico.cadastrar(validacao.dados, signal));
+        ? servico.atualizar(produtoId!, dados, versao!, signal)
+        : servico.cadastrar(dados, signal));
       if (!resposta || !estaAtivo()) return;
       setSucesso(isEditing ? 'Produto atualizado com sucesso.' : 'Produto cadastrado com sucesso.');
     } catch (falha) {

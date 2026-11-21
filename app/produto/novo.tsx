@@ -8,6 +8,7 @@ import { useFormularioProduto } from '../../hooks/useFormularioProduto';
 import Feedback from '../../components/Feedback';
 import { useTema } from '../../hooks/useTema';
 import BackgroundWrapper from '../../components/BackgroundWrapper';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 
 export default function NovoProdutoScreen() {
   const insets = useSafeAreaInsets();
@@ -20,19 +21,29 @@ export default function NovoProdutoScreen() {
     carregarProduto, handleSalvar, estaAtivo,
   } = useFormularioProduto(produtosService, params.id);
 
-  const pickImage = async () => {
+    const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 1,
       });
-      if (!result.canceled && estaAtivo()) {
-        const foto = result.assets[0];
-        if (foto.fileSize && foto.fileSize > 5 * 1024 * 1024) {
-          setErro('Selecione uma foto de até 5 MB.');
-          return;
-        }
-        setImagem(foto.uri);
+      if (result.canceled || !estaAtivo()) return;
+      const foto = result.assets[0];
+      if (foto.fileSize && foto.fileSize > 5 * 1024 * 1024) {
+        setErro('Selecione uma foto de até 5 MB.');
+        return;
       }
+      const contexto = ImageManipulator.manipulate(foto.uri);
+      contexto.resize({ width: 800 });
+      const reduzida = await contexto.renderAsync();
+      const resultado = await reduzida.saveAsync({
+      format: SaveFormat.JPEG, compress: 0.6, base64: true,
+      });
+      if (!estaAtivo()) return;
+      if (!resultado.base64) {
+        setErro('Não foi possível preparar a foto. Tente outra imagem.');
+        return;
+      }
+      setImagem('data:image/jpeg;base64,' + resultado.base64);
     } catch (falha) {
       if (estaAtivo()) setErro('Não foi possível abrir suas fotos. Verifique a permissão de acesso e tente novamente.');
     }
@@ -72,7 +83,6 @@ export default function NovoProdutoScreen() {
                 </View>
               )}
             </TouchableOpacity>
-            {imagem && <Text className="text-gray-500 dark:text-gray-400 text-xs mt-2">A foto selecionada é uma prévia local e ainda não será salva com o produto.</Text>}
             <View className={`rounded-xl p-4 flex-row items-center mt-4 bg-white/90 dark:bg-zinc-900/90 border border-gray-200 dark:border-transparent`}>
               <Feather name="image" size={18} color={primaryColor} className="mr-3" />
               <Text className={`text-xs font-medium ${isDark ? "text-[#5BE096]" : "text-[#2E8B57]"}`}>Uma boa foto ajuda a vender mais!</Text>

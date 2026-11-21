@@ -21,6 +21,7 @@ export interface DadosProduto {
   nome: string;
   quantidade: number;
   preco: number;
+  imagem?: string;
 }
 
 export interface ProdutoVersionado {
